@@ -71,6 +71,24 @@ def format_spelling(x):
         return 'United Overseas Bank (Malaysia) Berhad'
     elif x == 'United Overseas Bank, Ltd.':
         return 'United Overseas Bank, Ltd.'
+    elif x == 'Asb Bank Limited':
+        return 'ASB Bank Limited'
+    elif x == 'Chase Bank Usa, N.A.':
+        return 'Chase Bank USA, N.A.'
+    elif x == 'Dbs Bank Ltd':
+        return 'DBS Bank, Ltd'
+    elif x == 'Dbs Bank, Ltd':
+        return 'DBS Bank, Ltd'
+    elif x == 'Ing Bank (Australia), Ltd.':
+        return 'ING Bank (Australia), Ltd.'
+    elif x == 'Lloyds Tsb Offshore, Ltd.':
+        return 'Lloyds TSB Offshore, Ltd.'
+    elif x == 'Mitsubishi Ufj Nicos Co., Ltd.':
+        return 'Mitsubishi UFJ NICOS Co., Ltd.'
+    elif x == 'P.T. Bank Cimb Niaga Tbk.':
+        return 'P.T. Bank CIMB Niaga Tbk.'
+    elif x == 'Pt Bank Tabungan Pensiunan Nasional Tbk':
+        return 'PT Bank Tabungan Pensiunan Nasional Tbk'
     else:
         return x
 
