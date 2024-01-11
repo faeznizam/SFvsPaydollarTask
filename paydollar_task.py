@@ -5,133 +5,99 @@ import os
 import numpy as np
 
 # function 
-def clean_and_format(df):
-    column_to_clean = ['Card Issuing Bank (System)', 'Card Type']
-    df[column_to_clean] = df[column_to_clean].replace('--', '')
+def clean_and_reformat(df):
+    column_to_clean = ['Card Issuing Bank (System)', 'Card Type']  # list column to clean
+    df[column_to_clean] = df[column_to_clean].replace('--', '')    # replace blank row with --
+    df = df.drop('Status', axis=1)                                 # delete Status column 
 
-    df = df.drop('Status', axis=1)
-
+    # replace 'CREDIT' to Credit Card and 'Debit' to Debit Card
     df['Card Type'] = df['Card Type'].apply(lambda x : 'Credit Card' if x == 'CREDIT' else ('Debit Card' if x == 'DEBIT' else x ))
     
+    # get 2 digit from year and create dummy column
     df['Exp Year 2'] = df['Exp Year'].str[2:]
 
+    # reformat exp month and exp year
     df['Exp Date'] = np.where((df['Exp Month'] != '') & (df['Exp Year 2'] != ''),
                                 df['Exp Month'] + '/' + df['Exp Year 2'], 
                                 '')
-    
+    # drop dummy column
     df = df.drop('Exp Year 2', axis=1)
 
-    df['Card Issuing Bank (System)'] = df['Card Issuing Bank (System)'].str.title()
-    df['Card Issuing Bank (System)'] = df['Card Issuing Bank (System)'].apply(lambda x: format_spelling(x))
+    # create list with new column order
+    new_column_order = ['Merchant Ref.', 'Payment Mtd.', 'Card/Account', 'Exp Month', 'Exp Year',
+                        'Exp Date', 'Bank Ref.', 'Holder Name', 'Card Issuing Bank (System)',
+                        'Card Type', 'Channel Type', 'Payer IP']
+    # rearrange 
+    df = df[new_column_order]
 
+    # rename the column
+    df.rename(
+        columns={
+        'Merchant Ref.':'sescore__External_Donation_Reference_Id__c',
+        'Payment Mtd.' : 'sescore__Payment_Submethod__c',
+        'Card/Account' : 'sescore__Card_Number_Masked__c', 
+        'Exp Month' : 'Exp Month',
+        'Exp Year' : 'Exp Year',
+        'Bank Ref.' : 'sescore__Secondary_Token__c',
+        'Holder Name' : 'sescore__Cardholder_Name__c',
+        'Card Issuing Bank (System)' : 'sescore__Card_Issuer__c',
+        'Payer IP' : 'Payer IP',
+        'Card Type' : 'sescore__Payment_Method__c',
+        'Channel Type' : 'Channel Type',
+        'Exp Date' : 'sescore__Card_Expiry__c'
+        }, 
+        inplace=True)
+    
     return df
 
-def format_spelling(x):
-    if x == 'Aeon Credit Service (M) Berhad':
-        return 'Aeon Credit'
-    elif x == 'Affin Bank Berhad':
-        return 'AFFIN Bank Berhad'
-    elif x == 'Alliance Bank Malaysia Berhad':
-        return 'Alliance Bank Malaysia Berhad'
-    elif x == 'Ambank (M) Berhad':
-        return 'AmBank (M) Berhad'
-    elif x == 'Baiduri Bank Berhad':
-        return 'Baiduri bank'
-    elif x == 'Baiduri Bank Bhd':
-        return 'Baiduri bank'
-    elif x == 'Bank Islam Brunei Darussalam Berhad':
-        return 'Bank Islam Brunei Darussalam'
-    elif x == 'Bank Islam Malaysia Berhad':
-        return 'Bank Islam Malaysia Berhad'
-    elif x == 'Bank Muamalat Malaysia Berhad':
-        return 'Bank Muamalat Malaysia Berhad'
-    elif x == 'Bank Of China (Malaysia) Berhad':
-        return 'Bank Of China (Malaysia) Berhad'
-    elif x == 'Bank Simpanan Nasional':
-        return 'Bank Simpanan National'
-    elif x == 'Cimb Bank Berhad':
-        return 'CIMB Bank Berhad'
-    elif x == 'Citibank Berhad':
-        return 'Citibank Berhad'
-    elif x == 'Hong Leong Bank Berhad':
-        return 'Hong Leong Bank Berhad'
-    elif x == 'Hsbc Bank Malaysia Berhad':
-        return 'HSBC Bank Malaysia Berhad'
-    elif x == 'Malayan Banking Berhad':
-        return 'Malayan Banking Berhad'
-    elif x == 'Ocbc Bank (Malaysia) Berhad':
-        return 'OCBC Bank (Malaysia) Berhad'
-    elif x == 'Public Bank Berhad':
-        return 'Public Bank Berhad'
-    elif x == 'Rhb Bank Berhad':
-        return 'RHB Bank Berhad'
-    elif x == 'Standard Chartered Bank Malaysia Berhad':
-        return 'Standard Chartered Bank Malaysia Bhd'
-    elif x == 'United Overseas Bank (Malaysia) Berhad':
-        return 'United Overseas Bank (Malaysia) Berhad'
-    elif x == 'United Overseas Bank, Ltd.':
-        return 'United Overseas Bank, Ltd.'
-    elif x == 'Asb Bank Limited':
-        return 'ASB Bank Limited'
-    elif x == 'Chase Bank Usa, N.A.':
-        return 'Chase Bank USA, N.A.'
-    elif x == 'Dbs Bank Ltd':
-        return 'DBS Bank, Ltd'
-    elif x == 'Dbs Bank, Ltd':
-        return 'DBS Bank, Ltd'
-    elif x == 'Ing Bank (Australia), Ltd.':
-        return 'ING Bank (Australia), Ltd.'
-    elif x == 'Lloyds Tsb Offshore, Ltd.':
-        return 'Lloyds TSB Offshore, Ltd.'
-    elif x == 'Mitsubishi Ufj Nicos Co., Ltd.':
-        return 'Mitsubishi UFJ NICOS Co., Ltd.'
-    elif x == 'P.T. Bank Cimb Niaga Tbk.':
-        return 'P.T. Bank CIMB Niaga Tbk.'
-    elif x == 'Pt Bank Tabungan Pensiunan Nasional Tbk':
-        return 'PT Bank Tabungan Pensiunan Nasional Tbk'
-    else:
-        return x
+# function for date format
+def get_date_input(prompt):
+    while True:
+        try:
+            date_input = input(prompt)
+            day, month, year = map(int, date_input.split('/'))
+            formatted_date = f'{day:02d}{month:02d}{year:02d}'
+            return formatted_date
+        except ValueError:
+            print('Invalid input. Please enter valid date in format dd/mm/yy')
 
+# get start and end date from user
+def get_user_date_input():
+    print('Enter start date:')
+    start_date = get_date_input('Enter date in dd/mm/yy format: ')
 
+    print('\nEnter end date:')
+    end_date = get_date_input('Enter date in dd/mm/yy format: ')
+
+    return start_date, end_date
 
 # main function
 def main():
     # input folder path. Edit path accordingly.
-    folder_path = r'C:\Users\mfmohammad\OneDrive - UNICEF\Desktop\Paydollar vs SF Task\Dec\191223-311223\test'
-
+    folder_path = r'C:\Users\mfmohammad\OneDrive - UNICEF\Desktop\Paydollar vs SF Task\2024\Jan\010124-070124'
     file_name = 'order.xlsx'
 
-    files = os.listdir(folder_path)
-
+    # combine folder path and file name
     file_path = os.path.join(folder_path, file_name)
 
+    # read file
     df = pd.read_excel(file_path)
 
-    df = clean_and_format(df)
+    # apply function
+    df = clean_and_reformat(df)
 
-
-    #print('Enter start date:')
-    #day1 = str(input('Enter day for start date in dd: '))
-    #month1 = str(input('Enter month for the start date in mm: '))
-    #year1 = str(input('Enter year for the start date in yy: '))
-
-    #print('Enter end date:')
-    #day2 = str(input('Enter day for start date in dd: '))
-    #month2 = str(input('Enter month for the start date in mm: '))
-    #year2 = str(input('Enter year for the start date in yy: '))
-
-
-    #new_file_name = f'Online Donation - {day1}{month1}{year1}-{day2}{month2}{year2} - Paydollar.xlsx'
-    new_file_name = 'test.xlsx'
- 
+    # rename the file:
+    start_date, end_date = get_user_date_input()
+    new_file_name = f'Online Donation - {start_date}-{end_date} - Paydollar.xlsx'
+    
+    # build output file path
     new_file_path = os.path.join(folder_path, new_file_name)
     
-
+    # save file in the folder
     df.to_excel(new_file_path, index=False)
+
+    # successfull attempt prompt
     print(f'File {new_file_name} been saved in the folder')
-
-
-
 
 if __name__ == "__main__":
     main()
